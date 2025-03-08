@@ -1,0 +1,29 @@
+upstream grpc_context-service {
+        # 使用域名指向 gRPC 服务器
+        server localhost:50002;  # 替换为您的 gRPC 服务器域名和端口
+}
+
+
+server {
+    listen 443 http2;
+    server_name dev-context-service.aa.cn;
+    
+    # SSL 配置
+    ssl_certificate /etc/letsencrypt/archive/aa.cn/fullchain1.pem;
+    ssl_certificate_key /etc/letsencrypt/archive/aa.cn/privkey1.pem;
+    ssl_trusted_certificate /etc/letsencrypt/archive/aa.cn/chain1.pem;
+
+    # 安全 SSL 设置
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384';
+
+    # gRPC 配置
+    location / {
+        grpc_pass grpc://grpc_context-service;
+        # 通过以下指令来处理 gRPC 请求头
+        grpc_set_header X-Real-IP $remote_addr;
+        grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        grpc_set_header Host $host;
+    }
+}
